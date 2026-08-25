@@ -1,93 +1,78 @@
 import streamlit as st
 import plotly.express as px
-import pandas as pd
-from src.engines import CoreDataScienceSuite
-from src.client_scoping import get_translation_matrix, render_client_deck
+import os
 
-st.set_page_config(page_title="Apex DS Solution Delivery Hub", layout="wide")
+# Import components directly out of your repository tree!
+from src.data.snowflake_io import SnowflakeDataPipeline
+from src.models.forecasting import DemandForecaster
+from src.models.pricing_strategy import PriceElasticityEngine
+from src.models.marketing_mix import MarketingMixModel
+from src.models.omnichannel import OmnichannelMarkovAttribution
+from tests.test_data_validation import DataValidator
+from src.pipeline.databricks_orchestration import run_production_pipeline
 
-# App Header (Corporate Generic Style)
-st.title("🛡️ Apex Decision Intelligence: Solutions, Delivery & Governance Hub")
+st.set_page_config(page_title="Enterprise Solutions Delivery Hub", layout="wide")
+
+st.title("🛡️ Enterprise Decision Intelligence: Solutions, Delivery & Governance Hub")
 st.caption("Production Pipeline Deployment Engine for CPG, Retail, and Healthcare Analytics")
 st.write("---")
 
-# Load memory arrays
-df_raw = CoreDataScienceSuite.generate_synthetic_data()
+# Pull live numbers out of database module
+df_raw = SnowflakeDataPipeline.extract_features()
 
-# Architecture Navigation Bars
-main_tab, engine_tab, tech_tab, client_tab = st.tabs([
-    "🔎 1. Solution & Scoping", 
-    "📊 2. Algorithmic Engines", 
-    "⚡ 3. Enterprise Infrastructure Deployments", 
-    "🌟 4. Client Advisory Deck"
-])
+# Structure the Streamlit Hub tabs
+tab1, tab2, tab3 = st.tabs(["🔎 1. Solution & Scoping Matrix", "📊 2. Production Algorithmic Engines", "⚡ 3. Enterprise Infrastructure Deployments"])
 
-# ================= TAB 1: SOLUTIONS & SCOPING =================
-with main_tab:
-    st.subheader("💡 Automated Client Requirement Translation Matrix")
-    st.write("Translate vague, open-ended client statements into precise mathematical problems:")
+# ================= TAB 1: SOLUTION SCOPING =================
+with tab1:
+    st.subheader("💡 Business Requirement Translation")
     
-    matrix = get_translation_matrix()
-    selected_domain = st.selectbox("Select Client Problem Domain Area:", list(matrix.keys()))
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        st.error(f"**Vague Client Statement:** \"{matrix[selected_domain]['vague']}\"")
-    with col2:
-        st.success(f"**Mathematical Modeling Translation:** `{matrix[selected_domain]['math']}`")
-        st.info(f"**Projected Business ROI Impact:** {matrix[selected_domain]['impact']}")
+    # Read scope file directly from disk
+    if os.path.exists("docs/client_scoping_v1.md"):
+        with open("docs/client_scoping_v1.md", "r") as f:
+            st.markdown(f.read())
 
-# ================= TAB 2: MULTI-ENGINE ARCHITECTURE =================
-with engine_tab:
-    st.subheader("⚙️ Multi-Engine Modeling Architecture")
+# ================= TAB 2: ALGORITHMIC ENGINES =================
+with tab2:
+    st.subheader("⚙️ Multi-Engine Modeling Results")
     
-    m_col1, m_col2 = st.columns(2)
+    # Run tests module live
+    st.markdown("##### 🧪 Active Pipeline Unit Health Checkups")
+    for log in DataValidator.run_checks(df_raw):
+        st.write(log)
+    st.write("---")
     
-    with m_col1:
+    c1, c2 = st.columns(2)
+    with c1:
         st.markdown("#### Demand Forecasting Model Outputs")
-        forecasted_df = CoreDataScienceSuite.run_forecasting(df_raw)
+        forecaster = DemandForecaster()
+        forecasted_df = forecaster.fit_predict(df_raw)
+        
         fig = px.line(forecasted_df, x="Date", y=["Sales", "Predicted_Sales"],
-                      title="Asset Velocity Forecast Pipeline Tracker",
                       color_discrete_sequence=["#007A87", "#EF553B"])
         st.plotly_chart(fig, use_container_width=True)
         
-    with m_col2:
-        st.markdown("#### Price Elasticity Tracker")
-        elasticity = CoreDataScienceSuite.run_pricing(df_raw)
-        st.metric("Calculated Elasticity Coefficient", f"{elasticity:.3f}", 
-                  delta="Price Sensitive (Elastic)" if elasticity < -1 else "Price Resilient (Inelastic)")
+        # Download button layer
+        csv_data = forecasted_df.to_csv(index=False).encode('utf-8')
+        st.download_button(label="💾 Download Calculated Predictions CSV", data=csv_data, file_name="predictions.csv", mime="text/csv")
         
-        st.markdown("#### Marketing Mix Channel Lift Weights")
-        mmm_results = CoreDataScienceSuite.run_mmm(df_raw)
-        st.json(mmm_results)
+    with c2:
+        st.markdown("#### Price Elasticity Coefficient")
+        elasticity = PriceElasticityEngine.calculate_elasticity(df_raw)
+        st.metric("OLS Log-Log Coefficient", f"{elasticity:.3f}")
         
-        st.markdown("#### Omnichannel Markov Journey Maps")
-        markov_pathing = CoreDataScienceSuite.run_omnichannel()
-        st.json(dict(markov_pathing))
+        st.markdown("#### Marketing Attribution Impacts (MMM)")
+        st.json(MarketingMixModel.calculate_lift(df_raw))
+        
+        st.markdown("#### Omnichannel Customer Paths (Markov Chain)")
+        st.json(OmnichannelMarkovAttribution.calculate_paths())
 
-# ================= TAB 3: ENTERPRISE DEPLOYMENT TECH STACK =================
-with tech_tab:
-    st.subheader("💻 Enterprise Architecture Multi-Target Production Push")
-    st.write("Simulate pushing the validated models to your cloud infrastructure stack:")
+# ================= TAB 3: ENTERPRISE INFRASTRUCTURE =================
+with tab3:
+    st.subheader("💻 Cloud Environment Target Staging")
+    stack = st.radio("Select Target Infrastructure Platform Engine:", ["Microsoft Fabric Engine", "Snowflake Snowpark Layer", "Databricks Workspace"])
     
-    target_stack = st.radio("Choose Target Production Cloud Environment Endpoint:", [
-        "Microsoft Fabric (OneLake Delta Lake Engine Staging)",
-        "Snowflake (Snowpark Architecture Enterprise Warehouse Processing Layers)",
-        "Databricks (Unity Catalog Workspace Cluster Managed Inferences)"
-    ])
-    
-    st.warning(f"**Target Connectivity Protocol Established:** Active listening channels open for {target_stack}.")
-    
-    if st.button("🚀 Push Live Model Inferences to Cloud Pipeline Production"):
-        with st.spinner("Compiling dependencies, validating data schemas, and deploying containers..."):
-            st.success(f"🎉 Pipeline successfully integrated! Predictions written back to {target_stack} instance.")
-            st.code(f"""
-            # Production Log
-            import apex_deployment_core as adc
-            pipeline_status = adc.deploy(engine=ModelSuite, environment='{target_stack}')
-            print(pipeline_status) # Output: 200 OK - Pipeline Active
-            """, language="python")
-
-# ================= TAB 4: CLIENT ADVISORY & BUSINESS IMPACT =================
-with client_tab:
-    render_client_deck()
+    if st.button("🚀 Push Live Model Inferences to Production Cluster"):
+        with st.spinner("Uploading artifacts..."):
+            status_message = run_production_pipeline(stack)
+            st.success(f"🎉 Deployment Complete: {status_message}")
