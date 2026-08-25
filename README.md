@@ -1,6 +1,6 @@
 # 🛡️ Enterprise Decision Intelligence: Solutions, Delivery & Governance Hub
 ### Production Pipeline Deployment Engine for CPG, Retail, and Healthcare Analytics
-🚀 **Live Application URL:** *[Paste your live Streamlit Cloud web app link here]*
+🚀 **Live Application URL:** *[https://omnichannel-analytics-delivery-app-7txetkya8hvkzrwbqgknan.streamlit.app/]*
 
 ---
 
