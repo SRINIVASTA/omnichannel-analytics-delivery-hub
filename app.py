@@ -11,7 +11,6 @@ from src.models.marketing_mix import MarketingMixModel
 from src.models.omnichannel import OmnichannelMarkovAttribution
 from tests.test_data_validation import DataValidator
 from src.pipeline.databricks_orchestration import run_production_pipeline
-from src.client_scoping import get_translation_matrix
 
 st.set_page_config(page_title="Enterprise Solutions Delivery Hub", layout="wide")
 
@@ -36,6 +35,16 @@ with tab1:
     if os.path.exists("docs/client_scoping_v1.md"):
         with open("docs/client_scoping_v1.md", "r") as f:
             st.markdown(f.read())
+    else:
+        st.info("💡 **Business Problem Translation Matrix Loading...**")
+        st.markdown("""
+
+        | Vague Client Statement | Mathematical/Modeling Objective | Chosen Method |
+        | :--- | :--- | :--- |
+        | "We don't know how much inventory to stock." | Estimate conditional distribution P(Y_t+h | Y_:t, X_:t) | Random Forest Regressor |
+        | "How will changing pricing affect profit?" | Estimate Price Elasticity of Demand (dQ/dP * P/Q) | Log-Log OLS Regression |
+        | "Which marketing channels drive revenue?" | Deconstruct Target Variable Y into channel coefficients | Positive Ridge Regression |
+        """)
 
 # ================= TAB 2: ALGORITHMIC ENGINES =================
 # Pre-run algorithms so data flows natively into presentation decks
