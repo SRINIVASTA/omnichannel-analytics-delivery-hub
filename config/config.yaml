@@ -1,0 +1,5 @@
+forecasting:
+  n_estimators: 50
+  lags: [1, 2]
+marketing_mix:
+  alpha: 1.0
